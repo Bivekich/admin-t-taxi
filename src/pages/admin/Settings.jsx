@@ -5,6 +5,11 @@ const Settings = () => {
   const [pricePerMinute, setPricePerMinute] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
+  const [rolesCount, setRolesCount] = useState({
+    admin: 0,
+    client: 0,
+    driver: 0,
+  });
 
   // Function to fetch price per minute from backend
   const fetchPricePerMinute = async () => {
@@ -25,9 +30,42 @@ const Settings = () => {
     }
   };
 
-  // Use useEffect to fetch the price when the component mounts
+  // Function to fetch the count of users by role
+  const fetchTypesRoles = async () => {
+    try {
+      const roles = ["admin", "client", "driver"];
+      const counts = {};
+
+      // Loop over each role and fetch the count from the API
+      for (let role of roles) {
+        const response = await axios.get(
+          `https://api.24t-taxi.ru/api/user/getUserTypesCount/${role}`
+        );
+
+        if (response.status === 200) {
+          counts[role] = response.data || 0; // Assuming the count is in response.data.count
+        } else {
+          console.error(
+            `Error fetching count for role: ${role}`,
+            response.data
+          );
+        }
+      }
+
+      setRolesCount(counts);
+    } catch (error) {
+      console.error(
+        "Ошибка при загрузке количества пользователей по ролям:",
+        error
+      );
+      setError("Ошибка при загрузке количества пользователей по ролям.");
+    }
+  };
+
+  // Use useEffect to fetch the price and roles count when the component mounts
   useEffect(() => {
     fetchPricePerMinute();
+    fetchTypesRoles();
   }, []);
 
   const handleSave = async () => {
@@ -141,9 +179,26 @@ const Settings = () => {
     }
     return true;
   };
-
+  // Map roles to their Russian labels
+  const roleLabels = {
+    admin: "Администраторы",
+    client: "Клиенты",
+    driver: "Водители",
+  };
   return (
     <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Данные пользователей</h2>
+      <ul className="mb-4">
+        <li>
+          {roleLabels.admin}: {rolesCount.admin}
+        </li>
+        <li>
+          {roleLabels.client}: {rolesCount.client}
+        </li>
+        <li>
+          {roleLabels.driver}: {rolesCount.driver}
+        </li>
+      </ul>
       <h2 className="text-xl font-bold mb-4">Настройки</h2>
 
       <div className="mb-4">
